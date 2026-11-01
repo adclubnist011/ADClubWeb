@@ -1,0 +1,24 @@
+
+[
+  {
+    "id": 1,
+    "title": "Art-O-Rama 2026",
+    "description": "An artistic celebration bringing together creative minds to express their imagination through art. The event encouraged students to explore their creativity and showcase their artistic talents.",
+    "date": "March 28, 2026",
+    "venue": "MBA Library, NIST University",
+    "theme": "Childhood",
+    "participants": "31+ Participants",
+    "coordinator": "Deepak Kumar Tripathy and Deepti Duba",
+    "advisor": "Dr. Akankshya Patnaik",
+    "clubPresident": "Anant Kumar",
+    "clubVicePresident": "Saumya Mishra",
+    "image": "/events/art-o-rama.jpeg",
+    "tags": [
+      "Art",
+      "Creativity",
+      "Childhood",
+      "Student Participation"
+    ],
+    "featured": true
+  }
+]
