@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 
 import { GiDramaMasks } from "react-icons/gi";
-import aboutImage from "../assets/About/About.jpg";
+import aboutImage from "../assets/About/About.JPG";
 
 const AboutSection = () => {
   const highlights = [
