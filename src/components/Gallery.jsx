@@ -1,12 +1,11 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowUpRight,
   Camera,
   Images,
   Sparkles,
-  ExternalLink,
   Maximize2,
   Minimize2,
   RefreshCw,
@@ -15,12 +14,13 @@ import {
   Aperture,
   MoveUpRight,
   Play,
+  ExternalLink,
+  Monitor,
 } from "lucide-react";
 
 const DRIVE_FOLDER_ID = "1Qy15_jqN7NxLGEz6eweYT8slTh9QBjYD";
 
-const DRIVE_LINK =
-  "https://drive.google.com/drive/folders/1Qy15_jqN7NxLGEz6eweYT8slTh9QBjYD?usp=sharing";
+const DRIVE_LINK = `https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}?usp=sharing`;
 
 const EMBED_LINK = `https://drive.google.com/embeddedfolderview?id=${DRIVE_FOLDER_ID}#grid`;
 
@@ -57,6 +57,7 @@ const floating = {
 const Gallery = () => {
   const [reloadKey, setReloadKey] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [spotlight, setSpotlight] = useState({ x: 50, y: 50 });
 
   const galleryRef = useRef(null);
@@ -80,6 +81,22 @@ const Gallery = () => {
       console.error("Fullscreen is not available:", error);
     }
   };
+
+  // Keep fullscreen button state synchronized
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener(
+        "fullscreenchange",
+        handleFullscreenChange
+      );
+    };
+  }, []);
 
   // Mouse-following spotlight
   const handleMouseMove = (event) => {
@@ -122,9 +139,9 @@ const Gallery = () => {
 
       <section
         onMouseMove={handleMouseMove}
-        className="relative mb-20 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#18090b] via-[#100d0e] to-[#080808] px-6 py-14 sm:px-12 sm:py-20"
+        className="group relative mb-20 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#18090b] via-[#100d0e] to-[#080808] px-6 py-14 transition-all duration-700 hover:border-red-500/30 sm:px-12 sm:py-20"
       >
-        {/* Mouse spotlight */}
+        {/* Mouse Spotlight */}
 
         <div
           className="pointer-events-none absolute inset-0 opacity-70 transition-opacity duration-300"
@@ -132,6 +149,10 @@ const Gallery = () => {
             background: `radial-gradient(circle at ${spotlight.x}% ${spotlight.y}%, rgba(220,38,38,0.16), transparent 35%)`,
           }}
         />
+
+        {/* Decorative Glow */}
+
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-red-600/10 blur-[100px] transition-all duration-700 group-hover:bg-red-600/20" />
 
         <div className="relative z-10 grid items-center gap-12 lg:grid-cols-[1.4fr_0.6fr]">
           <motion.div
@@ -268,6 +289,7 @@ const Gallery = () => {
         <div>
           <div className="mb-3 flex items-center gap-2 text-red-500">
             <Images size={18} />
+
             <span className="text-[10px] font-bold uppercase tracking-[0.3em]">
               Captured Memories
             </span>
@@ -296,7 +318,7 @@ const Gallery = () => {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-500/20 bg-gradient-to-r from-[#19090b] via-[#111111] to-[#19090b] p-3"
+        className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-500/20 bg-gradient-to-r from-[#19090b] via-[#111111] to-[#19090b] p-4 transition-all duration-500 hover:border-red-500/40 hover:shadow-[0_0_25px_rgba(220,38,38,0.08)]"
       >
         <div className="flex items-center gap-3 px-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400">
@@ -307,6 +329,7 @@ const Gallery = () => {
             <p className="text-xs font-bold text-white">
               Gallery Preview
             </p>
+
             <p className="text-[10px] text-gray-500">
               Browse the shared collection
             </p>
@@ -335,6 +358,7 @@ const Gallery = () => {
             ) : (
               <Maximize2 size={14} />
             )}
+
             {expanded ? "Compact View" : "Expand View"}
           </motion.button>
 
@@ -344,8 +368,12 @@ const Gallery = () => {
             onClick={toggleFullscreen}
             className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white transition hover:bg-red-500"
           >
-            <Maximize2 size={14} />
-            Fullscreen
+            {fullscreen ? (
+              <Minimize2 size={14} />
+            ) : (
+              <Maximize2 size={14} />
+            )}
+            {fullscreen ? "Exit Fullscreen" : "Fullscreen"}
           </motion.button>
         </div>
       </motion.div>
@@ -357,9 +385,10 @@ const Gallery = () => {
       <motion.section
         ref={galleryRef}
         layout
-        className="relative isolate mt-2 overflow-hidden rounded-3xl border border-red-500/30 bg-[#090909] p-[2px] shadow-[0_0_50px_rgba(220,38,38,0.12)]"
+        onMouseMove={handleMouseMove}
+        className="group/gallery relative isolate mt-2 -mx-2 overflow-hidden rounded-3xl border border-red-500/30 bg-[#090909] p-[2px] shadow-[0_0_50px_rgba(220,38,38,0.12)] transition-all duration-700 hover:border-red-500/60 hover:shadow-[0_0_65px_rgba(220,38,38,0.2)] sm:-mx-4 lg:-mx-8"
       >
-        {/* Animated gradient border */}
+        {/* Animated Gradient Border */}
 
         <motion.div
           animate={{ rotate: 360 }}
@@ -401,9 +430,18 @@ const Gallery = () => {
             className="pointer-events-none absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-red-900/40 blur-[100px]"
           />
 
+          {/* Mouse Following Spotlight */}
+
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] opacity-0 transition-opacity duration-500 group-hover/gallery:opacity-100"
+            style={{
+              background: `radial-gradient(circle at ${spotlight.x}% ${spotlight.y}%, rgba(220,38,38,0.09), transparent 40%)`,
+            }}
+          />
+
           {/* Gallery Header */}
 
-          <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b border-red-500/20 bg-gradient-to-r from-[#21080c] via-[#100b0c] to-[#21080c] px-5 py-5 sm:px-7">
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b border-red-500/20 bg-gradient-to-r from-[#21080c] via-[#100b0c] to-[#21080c] px-5 py-5 transition-colors duration-500 group-hover/gallery:from-[#2a090e] group-hover/gallery:to-[#2a090e] sm:px-7">
             <div className="flex items-center gap-4">
               <motion.div
                 whileHover={{ rotate: 15, scale: 1.1 }}
@@ -438,14 +476,15 @@ const Gallery = () => {
 
           {/* Gallery Frame */}
 
-          <div className="relative z-10 p-3 sm:p-5">
+          <div className="relative z-10 p-1 sm:p-5">
+
             <motion.div
               whileHover={{
-                borderColor: "rgba(239,68,68,0.6)",
-                boxShadow: "0 0 35px rgba(220,38,38,0.12)",
+                borderColor: "rgba(239,68,68,0.65)",
+                boxShadow: "0 0 35px rgba(220,38,38,0.16)",
               }}
               transition={{ duration: 0.4 }}
-              className="relative overflow-hidden rounded-2xl border border-red-500/20 bg-[#101010] p-1.5 sm:p-2"
+              className="group/frame relative overflow-hidden rounded-2xl border border-red-500/20 bg-[#101010] p-0 transition-all duration-500"
             >
               {/* Moving Red Accent */}
 
@@ -458,6 +497,24 @@ const Gallery = () => {
                 }}
                 className="pointer-events-none absolute left-0 top-0 z-20 h-[2px] w-1/2 bg-gradient-to-r from-transparent via-red-500 to-transparent"
               />
+
+              {/* Top Left Label */}
+
+              <div className="pointer-events-none absolute left-5 top-5 z-20 flex items-center gap-2 rounded-full border border-red-500/30 bg-black/70 px-3 py-2 opacity-0 backdrop-blur-md transition-all duration-500 group-hover/frame:opacity-100">
+                <Camera size={12} className="text-red-400" />
+                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white">
+                  AD CLUB Collection
+                </span>
+              </div>
+
+              {/* Bottom Frame Caption */}
+
+              <div className="pointer-events-none absolute bottom-5 left-5 z-20 flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 px-4 py-2 opacity-0 backdrop-blur-md transition-all duration-500 group-hover/frame:translate-y-0 group-hover/frame:opacity-100">
+                <Images size={13} className="text-red-400" />
+                <span className="text-[9px] font-bold uppercase tracking-widest text-white">
+                  Memories Worth Revisiting
+                </span>
+              </div>
 
               {/* Google Drive iframe */}
 
@@ -473,7 +530,7 @@ const Gallery = () => {
                   <iframe
                     src={EMBED_LINK}
                     title="AD CLUB Google Drive Gallery"
-                    className={`w-full border-0 transition-all duration-500 ${
+                    className={`block w-[calc(100%+18px)] border-0 bg-[#111111] transition-all duration-500 ${
                       expanded
                         ? "h-[1100px] sm:h-[1300px]"
                         : "h-[650px] sm:h-[750px] lg:h-[850px]"
@@ -487,7 +544,7 @@ const Gallery = () => {
 
             {/* Bottom Toolbar */}
 
-            <div className="mt-4 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="mt-5 flex flex-col justify-between gap-4 border-t border-white/5 pt-5 sm:flex-row sm:items-center">
               <div className="flex items-center gap-3">
                 <Images size={18} className="text-red-500" />
 
@@ -513,8 +570,12 @@ const Gallery = () => {
                   onClick={toggleFullscreen}
                   className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white transition hover:border-red-500/40 hover:bg-red-500/10"
                 >
-                  <Maximize2 size={14} />
-                  Fullscreen
+                  {fullscreen ? (
+                    <Minimize2 size={14} />
+                  ) : (
+                    <Maximize2 size={14} />
+                  )}
+                  {fullscreen ? "Exit Fullscreen" : "Fullscreen"}
                 </motion.button>
 
                 <motion.a
@@ -539,70 +600,6 @@ const Gallery = () => {
       </motion.section>
 
       {/* =====================================
-          MEMORY CARDS
-      ====================================== */}
-
-      <motion.section
-        variants={stagger}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        className="mt-20 grid grid-cols-1 gap-4 sm:grid-cols-3"
-      >
-        {[
-          {
-            icon: Camera,
-            title: "Behind The Scenes",
-            description:
-              "The moments that happen beyond the spotlight.",
-          },
-          {
-            icon: Heart,
-            title: "Shared Memories",
-            description:
-              "The people, friendships, and memories we cherish.",
-          },
-          {
-            icon: Sparkles,
-            title: "Creative Moments",
-            description:
-              "Every idea, performance, and expression matters.",
-          },
-        ].map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <motion.div
-              key={item.title}
-              variants={fadeUp}
-              whileHover={{
-                y: -9,
-                borderColor: "rgba(239,68,68,0.5)",
-              }}
-              className="group rounded-2xl border border-white/10 bg-[#111111] p-7 transition-colors duration-300"
-            >
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 transition duration-300 group-hover:rotate-6 group-hover:scale-110 group-hover:bg-red-600 group-hover:text-white">
-                <Icon size={22} />
-              </div>
-
-              <h3 className="text-sm font-black uppercase tracking-wide text-white">
-                {item.title}
-              </h3>
-
-              <p className="mt-3 text-xs leading-6 text-gray-500">
-                {item.description}
-              </p>
-
-              <div className="mt-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-red-400">
-                AD CLUB
-                <MoveUpRight size={13} />
-              </div>
-            </motion.div>
-          );
-        })}
-      </motion.section>
-
-      {/* =====================================
           FINAL CTA
       ====================================== */}
 
@@ -611,7 +608,7 @@ const Gallery = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.7 }}
-        className="relative mt-16 overflow-hidden rounded-3xl border border-red-500/20 bg-gradient-to-r from-[#26090d] via-[#141010] to-[#26090d] px-5 py-14 text-center sm:py-20"
+        className="group relative mt-16 overflow-hidden rounded-3xl border border-red-500/20 bg-gradient-to-r from-[#26090d] via-[#141010] to-[#26090d] px-5 py-14 text-center transition-all duration-500 hover:border-red-500/40 hover:shadow-[0_0_50px_rgba(220,38,38,0.1)] sm:py-20"
       >
         <motion.div
           animate={{ rotate: 360 }}
@@ -624,6 +621,8 @@ const Gallery = () => {
         >
           <Aperture size={280} />
         </motion.div>
+
+        <div className="pointer-events-none absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-red-600/10 blur-[100px]" />
 
         <div className="relative z-10">
           <Sparkles className="mx-auto mb-5 text-red-500" size={30} />
