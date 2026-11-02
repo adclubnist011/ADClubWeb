@@ -15,7 +15,6 @@ import {
   Aperture,
   MoveUpRight,
   Play,
-  X,
 } from "lucide-react";
 
 const DRIVE_FOLDER_ID = "1Qy15_jqN7NxLGEz6eweYT8slTh9QBjYD";
@@ -58,15 +57,16 @@ const floating = {
 const Gallery = () => {
   const [reloadKey, setReloadKey] = useState(0);
   const [expanded, setExpanded] = useState(false);
-  const [showIntro, setShowIntro] = useState(true);
   const [spotlight, setSpotlight] = useState({ x: 50, y: 50 });
 
   const galleryRef = useRef(null);
 
+  // Refresh Google Drive gallery
   const refreshGallery = () => {
     setReloadKey((prev) => prev + 1);
   };
 
+  // Fullscreen gallery
   const toggleFullscreen = async () => {
     if (!galleryRef.current) return;
 
@@ -81,6 +81,7 @@ const Gallery = () => {
     }
   };
 
+  // Mouse-following spotlight
   const handleMouseMove = (event) => {
     const rect = event.currentTarget.getBoundingClientRect();
 
@@ -95,8 +96,12 @@ const Gallery = () => {
       id="gallery"
       className="relative min-h-screen overflow-hidden bg-[#080808] px-4 pb-24 pt-24 text-white sm:px-8 lg:px-16 xl:px-[130px]"
     >
-      {/* BACKGROUND LIGHT EFFECTS */}
+      {/* =====================================
+          BACKGROUND EFFECTS
+      ====================================== */}
+
       <div className="pointer-events-none absolute -left-40 top-20 h-[450px] w-[450px] rounded-full bg-red-700/10 blur-[150px]" />
+
       <div className="pointer-events-none absolute -right-40 top-[40%] h-[500px] w-[500px] rounded-full bg-red-900/10 blur-[160px]" />
 
       <motion.div
@@ -111,12 +116,16 @@ const Gallery = () => {
         className="pointer-events-none absolute left-[45%] top-[15%] h-64 w-64 rounded-full bg-red-600/10 blur-[100px]"
       />
 
-      {/* HERO SECTION */}
+      {/* =====================================
+          HERO SECTION
+      ====================================== */}
+
       <section
         onMouseMove={handleMouseMove}
         className="relative mb-20 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#18090b] via-[#100d0e] to-[#080808] px-6 py-14 sm:px-12 sm:py-20"
       >
         {/* Mouse spotlight */}
+
         <div
           className="pointer-events-none absolute inset-0 opacity-70 transition-opacity duration-300"
           style={{
@@ -191,7 +200,8 @@ const Gallery = () => {
             </motion.div>
           </motion.div>
 
-          {/* HERO DECORATION */}
+          {/* Animated Camera Illustration */}
+
           <div className="relative mx-auto flex h-64 w-64 items-center justify-center sm:h-80 sm:w-80">
             <motion.div
               animate={{ rotate: 360 }}
@@ -244,7 +254,10 @@ const Gallery = () => {
         </div>
       </section>
 
-      {/* SECTION HEADING */}
+      {/* =====================================
+          GALLERY HEADING
+      ====================================== */}
+
       <motion.section
         variants={fadeUp}
         initial="hidden"
@@ -275,15 +288,18 @@ const Gallery = () => {
         </div>
       </motion.section>
 
-      {/* INTERACTIVE GALLERY CONTROLS */}
+      {/* =====================================
+          GALLERY CONTROLS
+      ====================================== */}
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#111111] p-3"
+        className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-500/20 bg-gradient-to-r from-[#19090b] via-[#111111] to-[#19090b] p-3"
       >
         <div className="flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 text-red-400">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400">
             <Eye size={19} />
           </div>
 
@@ -302,7 +318,7 @@ const Gallery = () => {
             whileHover={{ scale: 1.06 }}
             whileTap={{ scale: 0.94 }}
             onClick={refreshGallery}
-            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-gray-300 transition hover:border-red-500/50 hover:text-red-400"
+            className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-red-400 transition hover:bg-red-600 hover:text-white"
           >
             <RefreshCw size={14} />
             Refresh
@@ -312,9 +328,13 @@ const Gallery = () => {
             whileHover={{ scale: 1.06 }}
             whileTap={{ scale: 0.94 }}
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-gray-300 transition hover:border-red-500/50 hover:text-red-400"
+            className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-red-400 transition hover:bg-red-600 hover:text-white"
           >
-            {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            {expanded ? (
+              <Minimize2 size={14} />
+            ) : (
+              <Maximize2 size={14} />
+            )}
             {expanded ? "Compact View" : "Expand View"}
           </motion.button>
 
@@ -330,73 +350,262 @@ const Gallery = () => {
         </div>
       </motion.div>
 
-      {/* GOOGLE DRIVE EMBED */}
+      {/* =====================================
+          CINEMATIC GOOGLE DRIVE GALLERY
+      ====================================== */}
+
       <motion.section
         ref={galleryRef}
         layout
-        className="group relative overflow-hidden rounded-2xl border border-red-500/20 bg-[#111111] p-2 shadow-[0_20px_80px_rgba(0,0,0,0.5)] sm:p-4"
+        className="relative isolate mt-2 overflow-hidden rounded-3xl border border-red-500/30 bg-[#090909] p-[2px] shadow-[0_0_50px_rgba(220,38,38,0.12)]"
       >
-        <div className="absolute left-0 top-0 h-[2px] w-full bg-gradient-to-r from-transparent via-red-600 to-transparent" />
+        {/* Animated gradient border */}
 
-        <div className="mb-3 flex items-center justify-between border-b border-white/10 px-3 py-3">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-            <span className="h-2.5 w-2.5 rounded-full bg-red-800" />
-            <span className="h-2.5 w-2.5 rounded-full bg-gray-700" />
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          className="pointer-events-none absolute -inset-[150%] -z-10 bg-[conic-gradient(from_0deg,transparent_0deg,#dc2626_80deg,transparent_150deg,#7f1d1d_220deg,transparent_300deg)]"
+        />
 
-            <span className="ml-2 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-              AD CLUB / Gallery
-            </span>
+        <div className="relative overflow-hidden rounded-[22px] bg-[#0b0b0b]">
+
+          {/* Animated Background Glow */}
+
+          <motion.div
+            animate={{
+              opacity: [0.15, 0.4, 0.15],
+              scale: [1, 1.3, 1],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="pointer-events-none absolute -left-20 top-20 h-72 w-72 rounded-full bg-red-700/30 blur-[100px]"
+          />
+
+          <motion.div
+            animate={{
+              opacity: [0.1, 0.3, 0.1],
+              scale: [1.2, 1, 1.2],
+            }}
+            transition={{
+              duration: 7,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="pointer-events-none absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-red-900/40 blur-[100px]"
+          />
+
+          {/* Gallery Header */}
+
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b border-red-500/20 bg-gradient-to-r from-[#21080c] via-[#100b0c] to-[#21080c] px-5 py-5 sm:px-7">
+            <div className="flex items-center gap-4">
+              <motion.div
+                whileHover={{ rotate: 15, scale: 1.1 }}
+                className="flex h-12 w-12 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-400"
+              >
+                <Camera size={23} />
+              </motion.div>
+
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">
+                  AD CLUB <span className="text-red-500">Gallery</span>
+                </h3>
+
+                <p className="mt-1 text-[10px] uppercase tracking-wider text-gray-500">
+                  A collection of unforgettable moments
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-full border border-red-500/20 bg-black/40 px-4 py-2">
+              <motion.span
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="h-2 w-2 rounded-full bg-red-500"
+              />
+
+              <span className="text-[9px] font-bold uppercase tracking-widest text-red-400">
+                View Only
+              </span>
+            </div>
           </div>
 
-          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-green-500">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
-            Live Preview
-          </span>
-        </div>
+          {/* Gallery Frame */}
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={reloadKey}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.4 }}
-            className="overflow-hidden rounded-xl bg-[#181818]"
-          >
-            <iframe
-              key={reloadKey}
-              src={EMBED_LINK}
-              title="AD CLUB Google Drive Gallery"
-              className={`w-full border-0 bg-white transition-all duration-500 ${
-                expanded
-                  ? "h-[1100px] sm:h-[1300px]"
-                  : "h-[650px] sm:h-[750px] lg:h-[850px]"
-              }`}
-              loading="lazy"
-              allow="autoplay"
-            />
-          </motion.div>
-        </AnimatePresence>
+          <div className="relative z-10 p-3 sm:p-5">
+            <motion.div
+              whileHover={{
+                borderColor: "rgba(239,68,68,0.6)",
+                boxShadow: "0 0 35px rgba(220,38,38,0.12)",
+              }}
+              transition={{ duration: 0.4 }}
+              className="relative overflow-hidden rounded-2xl border border-red-500/20 bg-[#101010] p-1.5 sm:p-2"
+            >
+              {/* Moving Red Accent */}
 
-        <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 bg-[#111111] px-4 py-4 sm:flex-row">
-          <p className="text-center text-xs text-gray-500 sm:text-left">
-            Images are hosted in the official AD CLUB Drive collection.
-          </p>
+              <motion.div
+                animate={{ x: ["-100%", "200%"] }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+                className="pointer-events-none absolute left-0 top-0 z-20 h-[2px] w-1/2 bg-gradient-to-r from-transparent via-red-500 to-transparent"
+              />
 
-          <a
-            href={DRIVE_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-xs font-bold text-red-400 transition hover:text-red-300"
-          >
-            View on Google Drive
-            <ExternalLink size={14} />
-          </a>
+              {/* Google Drive iframe */}
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={reloadKey}
+                  initial={{ opacity: 0, scale: 0.97, y: 15 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ duration: 0.5 }}
+                  className="overflow-hidden rounded-xl bg-[#111111]"
+                >
+                  <iframe
+                    src={EMBED_LINK}
+                    title="AD CLUB Google Drive Gallery"
+                    className={`w-full border-0 transition-all duration-500 ${
+                      expanded
+                        ? "h-[1100px] sm:h-[1300px]"
+                        : "h-[650px] sm:h-[750px] lg:h-[850px]"
+                    }`}
+                    loading="lazy"
+                    allow="autoplay"
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Bottom Toolbar */}
+
+            <div className="mt-4 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-3">
+                <Images size={18} className="text-red-500" />
+
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                  Memories worth revisiting
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={refreshGallery}
+                  className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-red-400 transition hover:bg-red-600 hover:text-white"
+                >
+                  <RefreshCw size={14} />
+                  Refresh
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={toggleFullscreen}
+                  className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white transition hover:border-red-500/40 hover:bg-red-500/10"
+                >
+                  <Maximize2 size={14} />
+                  Fullscreen
+                </motion.button>
+
+                <motion.a
+                  href={DRIVE_LINK}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white transition hover:bg-red-500"
+                >
+                  Open Gallery
+                  <ArrowUpRight size={14} />
+                </motion.a>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Accent */}
+
+          <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-red-600 to-transparent" />
         </div>
       </motion.section>
 
-      {/* FINAL CTA */}
+      {/* =====================================
+          MEMORY CARDS
+      ====================================== */}
+
+      <motion.section
+        variants={stagger}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="mt-20 grid grid-cols-1 gap-4 sm:grid-cols-3"
+      >
+        {[
+          {
+            icon: Camera,
+            title: "Behind The Scenes",
+            description:
+              "The moments that happen beyond the spotlight.",
+          },
+          {
+            icon: Heart,
+            title: "Shared Memories",
+            description:
+              "The people, friendships, and memories we cherish.",
+          },
+          {
+            icon: Sparkles,
+            title: "Creative Moments",
+            description:
+              "Every idea, performance, and expression matters.",
+          },
+        ].map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <motion.div
+              key={item.title}
+              variants={fadeUp}
+              whileHover={{
+                y: -9,
+                borderColor: "rgba(239,68,68,0.5)",
+              }}
+              className="group rounded-2xl border border-white/10 bg-[#111111] p-7 transition-colors duration-300"
+            >
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 transition duration-300 group-hover:rotate-6 group-hover:scale-110 group-hover:bg-red-600 group-hover:text-white">
+                <Icon size={22} />
+              </div>
+
+              <h3 className="text-sm font-black uppercase tracking-wide text-white">
+                {item.title}
+              </h3>
+
+              <p className="mt-3 text-xs leading-6 text-gray-500">
+                {item.description}
+              </p>
+
+              <div className="mt-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-red-400">
+                AD CLUB
+                <MoveUpRight size={13} />
+              </div>
+            </motion.div>
+          );
+        })}
+      </motion.section>
+
+      {/* =====================================
+          FINAL CTA
+      ====================================== */}
+
       <motion.section
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
