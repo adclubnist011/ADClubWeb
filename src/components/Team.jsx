@@ -12,45 +12,263 @@ import {
   AlertCircle,
   LoaderCircle,
   UserRound,
+  BookOpen,
 } from "lucide-react";
 
 // ============================================
 // GOOGLE SHEET CONFIGURATION
 // ============================================
 
-const POSITION_HOLDERS_SHEET_ID =
-  "1kWW-kPNLxUMuFgRi02RySOM_M_BELFwr8XLyYDRh6TM";
+const GOOGLE_SHEETS = {
+  advisor: {
+    id: "1gWkhpRu55gSDony2P_5-aLs6xDLYCu90Q4KRyYXw2PA",
+    gid: "510067764",
+  },
 
-const OTHER_MEMBERS_SHEET_ID =
-  "1Lfk9Wr6mqU7lUgBGw349WeoG8rCx4Jtk0HxgKN1iIyE";
+  positionHolders: {
+    id: "1kWW-kPNLxUMuFgRi02RySOM_M_BELFwr8XLyYDRh6TM",
+    gid: "510067764",
+  },
+
+  otherMembers: {
+    id: "1Lfk9Wr6mqU7lUgBGw349WeoG8rCx4Jtk0HxgKN1iIyE",
+    gid: "510067764",
+  },
+};
+
+// ============================================
+// NORMALIZE CLUB ADVISOR DATA
+// ============================================
+
+const getAdvisorField = (person, type) => {
+  const entries = Object.entries(person || {});
+
+  const normalizedEntries = entries.map(([key, value]) => [
+    key.toLowerCase().replace(/[\s_-]+/g, ""),
+    value,
+  ]);
+
+  const aliases = {
+    name: [
+      "advisorname",
+      "facultyname",
+      "teachername",
+      "fullname",
+      "name",
+    ],
+    role: [
+      "designation",
+      "advisordesignation",
+      "facultydesignation",
+      "title",
+      "role",
+      "position",
+    ],
+    department: [
+      "department",
+      "facultydepartment",
+      "branch",
+      "school",
+    ],
+    email: [
+      "officialemail",
+      "emailaddress",
+      "email",
+    ],
+    image: [
+      "profileimage",
+      "imageurl",
+      "uploadyourimage",
+      "photo",
+      "picture",
+      "image",
+    ],
+    about: [
+      "about",
+      "aboutclub",
+      "clubabout",
+      "aboutadvisor",
+      "description",
+      "profiledescription",
+      "bio",
+    ],
+    workExperience: [
+      "workexperience",
+      "workexp",
+      "experience",
+      "yearsofexperience",
+      "professionalexperience",
+    ],
+  };
+
+  for (const alias of aliases[type] || []) {
+    const found = normalizedEntries.find(([key, value]) => {
+      if (
+        value === undefined ||
+        value === null ||
+        String(value).trim() === ""
+      ) {
+        return false;
+      }
+
+      if (key === alias) return true;
+
+      if (type === "name") {
+        return (
+          (key.includes("advisor") ||
+            key.includes("faculty") ||
+            key.includes("teacher")) &&
+          key.includes("name")
+        );
+      }
+
+      if (type === "role") {
+        return (
+          key.includes("designation") ||
+          key.includes("position") ||
+          key.includes("title")
+        );
+      }
+
+      if (type === "department") {
+        return key.includes("department");
+      }
+
+      if (type === "email") {
+        return key.includes("email");
+      }
+
+      if (type === "image") {
+        return (
+          key.includes("image") ||
+          key.includes("photo") ||
+          key.includes("picture")
+        );
+      }
+
+      if (type === "about") {
+        return (
+          key === "about" ||
+          key.includes("about") ||
+          key.includes("description") ||
+          key === "bio"
+        );
+      }
+
+      if (type === "workExperience") {
+        return (
+          key.includes("experience") ||
+          key.includes("workexp")
+        );
+      }
+
+      return false;
+    });
+
+    if (found) return String(found[1]).trim();
+  }
+
+  return "";
+};
+
+// ============================================
+// NORMALIZE ADVISOR
+// ============================================
+
+const normalizeAdvisor = (person, index) => {
+  const member = normalizeMember(person, index, "advisor");
+
+  const name =
+    getAdvisorField(person, "name") ||
+    getField(person, "name", "full name", "faculty", "advisor");
+
+  const image =
+    getAdvisorField(person, "image") ||
+    getField(
+      person,
+      "upload your image",
+      "image",
+      "photo",
+      "profile image",
+      "image url"
+    );
+
+  return {
+    ...member,
+    id: `advisor-${index}`,
+    name,
+    role: getAdvisorField(person, "role") || "Club Advisor",
+    position: "Club Advisor",
+    branch: getAdvisorField(person, "department") || member.branch,
+    email: getAdvisorField(person, "email") || member.email,
+    about: getAdvisorField(person, "about"),
+    workExperience: getAdvisorField(person, "workExperience"),
+    image: getDirectImageUrl(image),
+  };
+};
 
 // ============================================
 // FETCH GOOGLE SHEET DATA
 // ============================================
 
-const fetchGoogleSheet = async (sheetId) => {
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+const fetchGoogleSheet = async ({ id, gid }) => {
+  const url = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`;
 
-  const response = await fetch(url);
+  try {
+    console.log("Fetching Google Sheet:", url);
 
-  if (!response.ok) {
-    throw new Error(
-      `Google Sheets request failed. Status: ${response.status}`
-    );
+    const response = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Google Sheets request failed: ${response.status}`
+      );
+    }
+
+    const csvText = await response.text();
+
+    console.log("Google Sheet Raw Response:", {
+      id,
+      gid,
+      status: response.status,
+      length: csvText.length,
+      preview: csvText.substring(0, 500),
+    });
+
+    if (!csvText.trim()) {
+      throw new Error(
+        `The sheet returned empty data. Check its GID: ${gid}`
+      );
+    }
+
+    if (
+      /<html|<!DOCTYPE|ServiceLogin|accounts\.google\.com/i.test(
+        csvText.substring(0, 1000)
+      )
+    ) {
+      throw new Error(
+        "Google returned an HTML page instead of CSV. Check sharing permissions."
+      );
+    }
+
+    const parsedData = parseCSV(csvText);
+
+    console.log("Parsed Sheet Data:", parsedData);
+
+    if (parsedData.length === 0) {
+      throw new Error(
+        `No data rows found in spreadsheet ${id}. Check the selected tab and its contents.`
+      );
+    }
+
+    return parsedData;
+  } catch (error) {
+    console.error("Google Sheets Fetch Error:", error);
+    throw error;
   }
-
-  const csvText = await response.text();
-
-  if (
-    csvText.trim().startsWith("<!DOCTYPE html") ||
-    csvText.trim().startsWith("<html")
-  ) {
-    throw new Error(
-      "Google Sheet access denied. Enable Anyone with the link as Viewer."
-    );
-  }
-
-  return csvText;
 };
 
 // ============================================
@@ -107,7 +325,6 @@ const parseCSV = (text) => {
 
   if (rows.length === 0) return [];
 
-  // Normalize headers
   const headers = rows[0].map((header) =>
     header
       .replace(/^\uFEFF/, "")
@@ -156,15 +373,12 @@ const getDirectImageUrl = (url) => {
 
   const value = url.trim();
 
-  // Extract ID from open?id=...
   let match = value.match(/[?&]id=([^&]+)/);
 
-  // Extract ID from /file/d/...
   if (!match) {
     match = value.match(/\/file\/d\/([^/]+)/);
   }
 
-  // Extract ID from /d/...
   if (!match) {
     match = value.match(/\/d\/([^/]+)/);
   }
@@ -250,21 +464,15 @@ const normalizeMember = (person, index, type) => {
 const getYearGroup = (year) => {
   const value = year.toLowerCase().trim();
 
-  if (
-    ["4th year", "fourth year", "4th", "4"].includes(value)
-  ) {
+  if (["4th year", "fourth year", "4th", "4"].includes(value)) {
     return "Fourth Year";
   }
 
-  if (
-    ["3rd year", "third year", "3rd", "3"].includes(value)
-  ) {
+  if (["3rd year", "third year", "3rd", "3"].includes(value)) {
     return "Third Year";
   }
 
-  if (
-    ["2nd year", "second year", "2nd", "2"].includes(value)
-  ) {
+  if (["2nd year", "second year", "2nd", "2"].includes(value)) {
     return "Second Year";
   }
 
@@ -273,7 +481,6 @@ const getYearGroup = (year) => {
 
 // ============================================
 // POSITION GROUPING
-// Uses the actual Position column
 // ============================================
 
 const getPositionGroup = (member) => {
@@ -300,7 +507,7 @@ const getPositionGroup = (member) => {
 const SectionHeading = ({ title, subtitle, icon: Icon }) => {
   return (
     <div className="mb-8">
-      <div className="flex items-center gap-3 mb-3">
+      <div className="mb-3 flex items-center gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
           <Icon size={22} />
         </div>
@@ -323,7 +530,7 @@ const SectionHeading = ({ title, subtitle, icon: Icon }) => {
 // MEMBER CARD
 // ============================================
 
-const MemberCard = ({ member, index }) => {
+const MemberCard = ({ member, index, featured = false }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -347,10 +554,19 @@ const MemberCard = ({ member, index }) => {
         }}
         whileHover={{ y: -7 }}
         onClick={() => setShowDetails(true)}
-        className="group cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-[#111111] transition-colors duration-300 hover:border-red-500/50"
+        className={`group cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-[#111111] transition-colors duration-300 hover:border-red-500/50 ${
+          featured ? "md:flex md:min-h-[340px] md:w-full" : ""
+        }`}
       >
         {/* IMAGE */}
-        <div className="relative flex h-64 items-center justify-center overflow-hidden bg-[#1a1a1a] sm:h-72">
+
+        <div
+          className={`relative flex h-64 items-center justify-center overflow-hidden bg-[#1a1a1a] sm:h-72 ${
+            featured
+              ? "md:h-auto md:min-h-[340px] md:w-[35%] md:shrink-0"
+              : ""
+          }`}
+        >
           {member.image && !imageError ? (
             <img
               src={member.image}
@@ -370,8 +586,8 @@ const MemberCard = ({ member, index }) => {
 
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
 
-          <div className="absolute bottom-4 left-4 right-4">
-            <h3 className="text-xl font-bold text-white">
+          <div className="absolute bottom-4 left-4 right-4 md:bottom-5 md:left-5">
+            <h3 className="text-xl font-bold text-white md:text-2xl">
               {member.name || "Team Member"}
             </h3>
 
@@ -381,14 +597,18 @@ const MemberCard = ({ member, index }) => {
           </div>
         </div>
 
-        {/* MEMBER INFORMATION */}
-        <div className="space-y-2 p-4">
+        {/* MEMBER INFORMATION / ADVISOR ABOUT */}
+
+        <div
+          className={`space-y-3 p-4 ${
+            featured
+              ? "md:flex md:flex-1 md:flex-col md:justify-center md:space-y-5 md:p-8"
+              : ""
+          }`}
+        >
           {member.branch && (
             <div className="flex items-center gap-2 text-sm text-gray-300">
-              <GraduationCap
-                size={17}
-                className="text-red-400"
-              />
+              <GraduationCap size={17} className="shrink-0 text-red-400" />
               <span>{member.branch}</span>
             </div>
           )}
@@ -396,6 +616,41 @@ const MemberCard = ({ member, index }) => {
           {member.year && (
             <p className="text-xs text-gray-500">
               {member.year}
+            </p>
+          )}
+
+          {/* ABOUT CONTENT */}
+
+          {featured && member.about && (
+            <div className="border-t border-white/10 pt-4">
+              <div className="mb-3 flex items-center gap-2">
+                <BookOpen size={18} className="text-red-400" />
+
+                <h4 className="text-sm font-semibold uppercase tracking-wider text-red-400">
+                  About
+                </h4>
+              </div>
+
+              <p className="whitespace-pre-line text-sm leading-7 text-gray-300 md:text-base">
+                {member.about}
+              </p>
+            </div>
+          )}
+
+          {featured && member.workExperience && (
+            <div>
+              <p className="text-sm text-gray-400">
+                <span className="font-semibold text-gray-200">
+                  Work Experience:
+                </span>{" "}
+                {member.workExperience}
+              </p>
+            </div>
+          )}
+
+          {featured && member.email && (
+            <p className="break-all text-sm text-gray-400">
+              {member.email}
             </p>
           )}
 
@@ -412,6 +667,7 @@ const MemberCard = ({ member, index }) => {
       </motion.div>
 
       {/* PROFILE POPUP */}
+
       <AnimatePresence>
         {showDetails && (
           <motion.div
@@ -426,7 +682,7 @@ const MemberCard = ({ member, index }) => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={(event) => event.stopPropagation()}
-              className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#151515] p-6"
+              className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#151515] p-6"
             >
               <button
                 onClick={() => setShowDetails(false)}
@@ -447,7 +703,7 @@ const MemberCard = ({ member, index }) => {
                   />
                 ) : (
                   <span className="text-3xl font-bold text-red-400">
-                    {initials}
+                    {initials || <UserRound size={38} />}
                   </span>
                 )}
               </div>
@@ -462,11 +718,30 @@ const MemberCard = ({ member, index }) => {
                 </p>
               </div>
 
+              {/* ADVISOR ABOUT IN PROFILE */}
+
+              {member.about && (
+                <div className="mt-6 border-t border-white/10 pt-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <BookOpen size={18} className="text-red-400" />
+
+                    <h4 className="font-semibold text-red-400">
+                      About
+                    </h4>
+                  </div>
+
+                  <p className="whitespace-pre-line text-sm leading-7 text-gray-300">
+                    {member.about}
+                  </p>
+                </div>
+              )}
+
               <div className="mt-6 space-y-3 border-t border-white/10 pt-5 text-sm">
                 {[
                   ["Roll Number", member.rollNo],
                   ["Branch", member.branch],
                   ["Academic Year", member.year],
+                  ["Work Experience", member.workExperience],
                   ["Email", member.email],
                 ].map(([label, value]) =>
                   value ? (
@@ -524,6 +799,9 @@ const Team = () => {
     secondYear: [],
   });
 
+  const [clubAdvisors, setClubAdvisors] = useState([]);
+  const [advisorError, setAdvisorError] = useState("");
+
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -540,13 +818,23 @@ const Team = () => {
         setLoading(true);
         setError("");
 
-        const [positionCSV, membersCSV] = await Promise.all([
-          fetchGoogleSheet(POSITION_HOLDERS_SHEET_ID),
-          fetchGoogleSheet(OTHER_MEMBERS_SHEET_ID),
+        let advisorFetchError = "";
+
+        const [positionData, membersData, advisorData] = await Promise.all([
+          fetchGoogleSheet(GOOGLE_SHEETS.positionHolders),
+          fetchGoogleSheet(GOOGLE_SHEETS.otherMembers),
+          fetchGoogleSheet(GOOGLE_SHEETS.advisor),
         ]);
 
-        const positionData = parseCSV(positionCSV);
-        const membersData = parseCSV(membersCSV);
+        const advisors = advisorData
+          .map((person, index) => normalizeAdvisor(person, index))
+          .filter(
+            (advisor) =>
+              advisor.name && advisor.name !== "Club Advisor"
+          );
+
+        console.log("Club Advisor Parsed Rows:", advisorData);
+        console.log("Club Advisors:", advisors);
 
         console.log("Position Holders Raw Data:", positionData);
         console.log("Other Members Raw Data:", membersData);
@@ -563,7 +851,6 @@ const Team = () => {
           )
           .filter((member) => member.name);
 
-        // POSITION HOLDER GROUPS
         const leadership = positionMembers.filter(
           (member) =>
             getPositionGroup(member) === "Core Leadership"
@@ -574,7 +861,6 @@ const Team = () => {
             getPositionGroup(member) === "Department Heads"
         );
 
-        // OTHER MEMBER GROUPS
         const fourthYear = otherMembers.filter(
           (member) =>
             getYearGroup(member.year) === "Fourth Year"
@@ -590,13 +876,16 @@ const Team = () => {
             getYearGroup(member.year) === "Second Year"
         );
 
-        console.log("Core Leadership:", leadership);
-        console.log("Department Heads:", departmentHeads);
-        console.log("Fourth Year:", fourthYear);
-        console.log("Third Year:", thirdYear);
-        console.log("Second Year:", secondYear);
-
         if (isMounted) {
+          setClubAdvisors(advisors);
+
+          setAdvisorError(
+            advisorFetchError ||
+              (advisorData.length > 0 && advisors.length === 0
+                ? "The advisor sheet loaded, but no advisor name column was recognized. Check the first row headings and make sure a name is filled in."
+                : "")
+          );
+
           setTeamMembers({
             leadership,
             departmentHeads,
@@ -647,6 +936,8 @@ const Team = () => {
           member.branch,
           member.year,
           member.email,
+          member.about,
+          member.workExperience,
         ]
           .join(" ")
           .toLowerCase();
@@ -656,13 +947,14 @@ const Team = () => {
     };
 
     return {
+      advisors: filterMembers(clubAdvisors),
       leadership: filterMembers(teamMembers.leadership),
       departmentHeads: filterMembers(teamMembers.departmentHeads),
       fourthYear: filterMembers(teamMembers.fourthYear),
       thirdYear: filterMembers(teamMembers.thirdYear),
       secondYear: filterMembers(teamMembers.secondYear),
     };
-  }, [search, teamMembers]);
+  }, [search, teamMembers, clubAdvisors]);
 
   // ------------------------------------------
   // SECTION CONFIGURATION
@@ -706,20 +998,25 @@ const Team = () => {
     },
   ];
 
-  const totalMembers = Object.values(teamMembers).reduce(
-    (total, members) => total + members.length,
-    0
-  );
+  const totalMembers =
+    Object.values(teamMembers).reduce(
+      (total, members) => total + members.length,
+      0
+    ) + clubAdvisors.length;
 
   // ==========================================
   // PAGE UI
   // ==========================================
 
   return (
-    <section id="team" className="min-h-screen bg-[#080808] px-4 py-20 md:px-8 md:py-28">
+    <section
+      id="team"
+      className="min-h-screen bg-[#080808] px-4 py-20 md:px-8 md:py-28"
+    >
       <div className="mx-auto max-w-7xl">
 
         {/* HEADER */}
+
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
@@ -755,6 +1052,7 @@ const Team = () => {
         </motion.div>
 
         {/* SEARCH BAR */}
+
         <div className="mx-auto mb-16 max-w-xl">
           <div className="relative">
             <Search
@@ -765,9 +1063,7 @@ const Team = () => {
             <input
               type="text"
               value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
+              onChange={(event) => setSearch(event.target.value)}
               placeholder="Search name, role, roll number or branch..."
               className="w-full rounded-xl border border-white/10 bg-[#141414] py-4 pl-12 pr-12 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-red-500/60"
             />
@@ -785,6 +1081,7 @@ const Team = () => {
         </div>
 
         {/* LOADING STATE */}
+
         {loading && (
           <div className="flex flex-col items-center justify-center py-24 text-gray-400">
             <LoaderCircle
@@ -797,6 +1094,7 @@ const Team = () => {
         )}
 
         {/* ERROR STATE */}
+
         {!loading && error && (
           <div className="mx-auto max-w-xl rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center">
             <AlertCircle
@@ -822,8 +1120,45 @@ const Team = () => {
         )}
 
         {/* TEAM SECTIONS */}
+
         {!loading && !error && (
           <div className="space-y-20">
+
+            {/* CLUB ADVISOR SECTION */}
+
+            <section>
+              <SectionHeading
+                title="Club Advisor"
+                subtitle="The mentor and guiding force behind our club."
+                icon={GraduationCap}
+              />
+
+              {filteredSections.advisors.length > 0 ? (
+                <div className="w-full space-y-6">
+                  {filteredSections.advisors.map((advisor, index) => (
+                    <MemberCard
+                      key={advisor.id}
+                      member={advisor}
+                      index={index}
+                      featured
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center">
+                  <p className="text-sm text-gray-500">
+                    {search
+                      ? "No matching club advisor found."
+                      : advisorError
+                        ? advisorError
+                        : "No advisor rows with a recognized name were found. Check that the sheet has a header row and at least one completed advisor record."}
+                  </p>
+                </div>
+              )}
+            </section>
+
+            {/* OTHER TEAM SECTIONS */}
+
             {sections.map((section) => (
               <div key={section.id}>
                 <SectionHeading
